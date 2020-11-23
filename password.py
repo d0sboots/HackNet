@@ -72,6 +72,12 @@ def display_hash_code(string_in):
         signed = signed - 0x100000000
     print('The hash code for "%s" is: 0x%08X, %d' % (string_in, code, signed))
 
+def display_encoded(password):
+    """Show the encoded value for the given password; the inverse of usual."""
+    target = get_hash_code(password) & 0xFFFF
+    value = target + (ord('D') * 1822 + (65535 >> 1))
+    print('Encoded check value: %d' % value)
+
 def scramble(string_in):
     """Permute a string, so that we try solutions in different orders."""
     return [ord(x) + (ord('_') << 16) for x in random.sample(string_in, len(string_in))]
@@ -93,10 +99,19 @@ def try_all(ints_list, source, pos, ints_len, target):
 def main():
     """main(). Thanks, pylint."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('value', type=int,
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-d', '--display', metavar='PASS',
+        help="Display hash code for the given string")
+    group.add_argument('value', type=int, nargs='?',
         help="""The encoded integer value that appears immediately before the last
         instance of "::" in the file header""")
+
     args = parser.parse_args()
+    if args.display:
+      display_hash_code(args.display)
+      display_encoded(args.display)
+      sys.exit(0)
+
     target = args.value - (ord('D') * 1822 + (65535 >> 1))
     if target < 0 or target >= 65536:
         print('Calculated target value of %d is out of range; no solution possible!'
